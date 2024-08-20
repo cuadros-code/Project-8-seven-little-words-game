@@ -18,7 +18,11 @@ class ViewController: UIViewController {
     var activatedButtons = [UIButton]()
     var solutions = [String]()
     
-    var score = 0
+    var score = 0 {
+        didSet {
+            scoreLabel.text = "Score: \(score)"
+        }
+    }
     var level = 1
     
     override func loadView() {
@@ -144,15 +148,36 @@ class ViewController: UIViewController {
     }
     
     @objc func letterTapped(_ sender: UIButton) {
-        
+        guard let buttonTitle = sender.titleLabel?.text else { return }
+        currentAnswer.text = currentAnswer.text?.appending(buttonTitle)
+        activatedButtons.append(sender)
+        sender.isHidden =  true
     }
     
     @objc func submitTapped(_ sender: UIButton) {
-        print(sender)
+        guard let answerText = currentAnswer.text else { return }
+        if let solutionPosition = solutions.firstIndex(of: answerText) {
+            
+            var splitLabel = answersLabel.text?.components(separatedBy: "\n")
+            splitLabel?[solutionPosition] = answerText
+            answersLabel.text = splitLabel?.joined(separator: "\n")
+            
+            score += 1
+            currentAnswer.text = ""
+            
+            if score % 7 == 0 {
+                showAlert()
+            }
+            
+        }
     }
     
     @objc func clearTapped(_ sender: UIButton) {
-        print(sender)
+        currentAnswer.text = ""
+        for button in activatedButtons {
+            button.isHidden = false
+        }
+        activatedButtons.removeAll()
     }
     
     func loadLevel() {
@@ -184,7 +209,7 @@ class ViewController: UIViewController {
                     // SAFARI
                     let solutionWord = answer.replacingOccurrences(of: "|", with: "")
                     solutionsString += "\(solutionWord.count) letters\n"
-                    solutions.append(solutionsString)
+                    solutions.append(solutionWord)
                     
                     
                     let bit = answer.components(separatedBy: "|")
@@ -203,8 +228,31 @@ class ViewController: UIViewController {
                 letterButtons[i].setTitle(letterBits[i], for: .normal)
             }
         }
-        
-        
+    }
+    
+    func showAlert(){
+        let ac = UIAlertController(
+            title: "Well done!",
+            message: "Are you ready for the next level?",
+            preferredStyle: .alert
+        )
+        ac.addAction(UIAlertAction(
+            title: "Let's go!",
+            style: .default,
+            handler: levelUp
+        ))
+        present(ac, animated: true)
+    }
+    
+    func levelUp(action: UIAlertAction) {
+        level += 1
+        solutions.removeAll(keepingCapacity: true)
+
+        loadLevel()
+
+        for btn in letterButtons {
+            btn.isHidden = false
+        }
     }
     
 

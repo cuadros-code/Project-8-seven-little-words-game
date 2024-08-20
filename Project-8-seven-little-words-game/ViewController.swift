@@ -15,6 +15,12 @@ class ViewController: UIViewController {
     var scoreLabel: UILabel!
     var letterButtons = [UIButton]()
     
+    var activatedButtons = [UIButton]()
+    var solutions = [String]()
+    
+    var score = 0
+    var level = 1
+    
     override func loadView() {
         view = UIView()
         view.backgroundColor = .white
@@ -54,11 +60,13 @@ class ViewController: UIViewController {
         let submit = UIButton(type: .system)
         submit.translatesAutoresizingMaskIntoConstraints = false
         submit.setTitle("SUBMIT", for: .normal)
+        submit.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
         view.addSubview(submit)
         
         let clear = UIButton(type: .system)
         clear.translatesAutoresizingMaskIntoConstraints = false
         clear.setTitle("CLEAR", for: .normal)
+        clear.addTarget(self, action: #selector(clearTapped), for: .touchUpInside)
         view.addSubview(clear)
         
         let buttonsView = UIView()
@@ -74,7 +82,7 @@ class ViewController: UIViewController {
             // pin the leading edge of the clues label to the leading edge of our layout margins, adding 100 for some space
             cluesLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor, constant: 100),
             // make the clues label 60% of the width of our layout margins, minus 100
-            cluesLabel.widthAnchor.constraint(equalTo: view.layoutMarginsGuide.widthAnchor, multiplier: 0.6, constant: -100),
+            cluesLabel.widthAnchor.constraint(equalTo: view.layoutMarginsGuide.widthAnchor, multiplier: 0.7, constant: -80),
 
             // also pin the top of the answers label to the bottom of the score label
             answersLabel.topAnchor.constraint(equalTo: scoreLabel.bottomAnchor),
@@ -104,7 +112,7 @@ class ViewController: UIViewController {
             buttonsView.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -20)
             
         ])
-        
+                
         let width = 150
         let height = 80
         
@@ -112,8 +120,6 @@ class ViewController: UIViewController {
             for col in 0..<5 {
                 let letterButton = UIButton(type: .system)
                 letterButton.titleLabel?.font = UIFont.systemFont(ofSize: 32)
-
-                // give the button some temporary text so we can see it on-screen
                 letterButton.setTitle("r \(row) - c\(col)", for: .normal)
 
                 // calculate the frame of this button using its column and row
@@ -125,6 +131,8 @@ class ViewController: UIViewController {
 
                 // and also to our letterButtons array
                 letterButtons.append(letterButton)
+                
+                letterButton.addTarget(self, action: #selector(letterTapped), for: .touchUpInside)
             }
         }
         
@@ -132,6 +140,71 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        loadLevel()
+    }
+    
+    @objc func letterTapped(_ sender: UIButton) {
+        
+    }
+    
+    @objc func submitTapped(_ sender: UIButton) {
+        print(sender)
+    }
+    
+    @objc func clearTapped(_ sender: UIButton) {
+        print(sender)
+    }
+    
+    func loadLevel() {
+        var clueString = ""
+        var solutionsString = ""
+        var letterBits = [String]()
+        
+        if let levelFileUrl = Bundle.main.url(forResource: "level\(level)", withExtension: "txt"){
+            if let levelContents = try? String(contentsOf: levelFileUrl) {
+                
+                // SA|FA|RI: The zoological web
+                var lines: [String] = levelContents.components(separatedBy: "\n")
+                lines.shuffle()
+                lines.removeAll(where: { $0.isEmpty })
+                
+                for (index, line) in lines.enumerated() {
+                    // part[0] = SA|FA|RI
+                    // part[1] The zoological web
+                    let parts = line.components(separatedBy: ": ")
+                    
+                    if parts.count != 2 { continue }
+                    
+                    let answer = parts[0] // SA|FA|RI
+                    let clue = parts[1]   // The zoological web
+                    
+                    // 1. The zoological web
+                    clueString += "\(index + 1). \(clue)\n"
+                    
+                    // SAFARI
+                    let solutionWord = answer.replacingOccurrences(of: "|", with: "")
+                    solutionsString += "\(solutionWord.count) letters\n"
+                    solutions.append(solutionsString)
+                    
+                    
+                    let bit = answer.components(separatedBy: "|")
+                    letterBits += bit
+                }
+            }
+        }
+        
+        cluesLabel.text = clueString.trimmingCharacters(in: .whitespacesAndNewlines)
+        answersLabel.text = solutionsString.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        letterBits.shuffle()
+        
+        if letterBits.count == letterButtons.count {
+            for i in 0 ..< letterButtons.count {
+                letterButtons[i].setTitle(letterBits[i], for: .normal)
+            }
+        }
+        
+        
     }
     
 

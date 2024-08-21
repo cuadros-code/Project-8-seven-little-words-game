@@ -18,9 +18,12 @@ class ViewController: UIViewController {
     var activatedButtons = [UIButton]()
     var solutions = [String]()
     
+    var numberOfCorrect = 0
     var score = 0 {
         didSet {
-            scoreLabel.text = "Score: \(score)"
+            if score >= 0 {
+                scoreLabel.text = "Score: \(score)"
+            }
         }
     }
     var level = 1
@@ -61,17 +64,17 @@ class ViewController: UIViewController {
         currentAnswer.isUserInteractionEnabled = false
         view.addSubview(currentAnswer)
         
-        let submit = UIButton(type: .system)
-        submit.translatesAutoresizingMaskIntoConstraints = false
-        submit.setTitle("SUBMIT", for: .normal)
-        submit.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
-        view.addSubview(submit)
-        
         let clear = UIButton(type: .system)
         clear.translatesAutoresizingMaskIntoConstraints = false
         clear.setTitle("CLEAR", for: .normal)
         clear.addTarget(self, action: #selector(clearTapped), for: .touchUpInside)
         view.addSubview(clear)
+        
+        let submit = UIButton(type: .system)
+        submit.translatesAutoresizingMaskIntoConstraints = false
+        submit.setTitle("SUBMIT", for: .normal)
+        submit.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
+        view.addSubview(submit)
         
         let buttonsView = UIView()
         buttonsView.translatesAutoresizingMaskIntoConstraints = false
@@ -101,19 +104,19 @@ class ViewController: UIViewController {
             currentAnswer.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.5),
             currentAnswer.topAnchor.constraint(equalTo: cluesLabel.bottomAnchor, constant: 20),
             
-            submit.topAnchor.constraint(equalTo: currentAnswer.bottomAnchor, constant: 10),
-            submit.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: -100),
-            submit.heightAnchor.constraint(equalToConstant: 44),
-            
             clear.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 100),
             clear.centerYAnchor.constraint(equalTo: submit.centerYAnchor),
             clear.heightAnchor.constraint(equalToConstant: 44),
+            
+            submit.topAnchor.constraint(equalTo: currentAnswer.bottomAnchor, constant: 10),
+            submit.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: -100),
+            submit.heightAnchor.constraint(equalToConstant: 44),
             
             buttonsView.widthAnchor.constraint(equalToConstant: 750),
             buttonsView.heightAnchor.constraint(equalToConstant: 320),
             buttonsView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             buttonsView.topAnchor.constraint(equalTo: submit.bottomAnchor, constant: 20),
-            buttonsView.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -20)
+            buttonsView.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -20),
             
         ])
                 
@@ -125,6 +128,7 @@ class ViewController: UIViewController {
                 let letterButton = UIButton(type: .system)
                 letterButton.titleLabel?.font = UIFont.systemFont(ofSize: 32)
                 letterButton.setTitle("r \(row) - c\(col)", for: .normal)
+                letterButton.layer.borderWidth = 1
 
                 // calculate the frame of this button using its column and row
                 let frame = CGRect(x: col * width, y: row * height, width: width, height: height)
@@ -162,13 +166,23 @@ class ViewController: UIViewController {
             splitLabel?[solutionPosition] = answerText
             answersLabel.text = splitLabel?.joined(separator: "\n")
             
+            numberOfCorrect += 1
             score += 1
             currentAnswer.text = ""
             
-            if score % 7 == 0 {
+            if numberOfCorrect % 7 == 0 {
                 showAlert()
             }
             
+        } else {
+            score -= 1
+            let ac = UIAlertController(
+                title: "Failed",
+                message: "Failed to find the guess",
+                preferredStyle: .alert
+            )
+            ac.addAction(UIAlertAction(title: "OK", style: .cancel))
+            present(ac, animated: true)
         }
     }
     
